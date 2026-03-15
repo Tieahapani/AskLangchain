@@ -7,3 +7,6 @@ requests
 streamlit
 python-dotenv
 lxml
+rank-bm25
+sentence-transformers
+langchain-classic
