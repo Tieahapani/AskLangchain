@@ -1,0 +1,9 @@
+langchain==1.2.12
+langchain-google-genai==4.1.2
+langchain-community==0.4.1
+faiss-cpu
+beautifulsoup4
+requests
+streamlit
+python-dotenv
+lxml
