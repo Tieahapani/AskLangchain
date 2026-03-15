@@ -4,6 +4,10 @@ import sys
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+# Load secrets for Streamlit Cloud deployment
+if hasattr(st, "secrets") and "GOOGLE_API_KEY" in st.secrets:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from Rag.chain import ask 
