@@ -1,16 +1,18 @@
-import os 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from dotenv import load_dotenv
+from langsmith.run_helpers import get_current_run_tree 
+from langsmith import traceable 
 
 from Rag.retriever import (
-    get_similarity_retriever, get_threshold_retriever, get_mmr_retriever, get_hybrid_retriever, get_reranked_retriever, 
+    get_similarity_retriever, get_threshold_retriever, get_mmr_retriever, get_hybrid_retriever, get_reranked_retriever,
 )
-
-load_dotenv()
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 PROMPT_TEMPLATE = """You are a helpful LangChain documentation assistant.
 Answer the user's question based ONLY on the following context from the LangChain docs.
@@ -45,7 +47,7 @@ def get_retriever(strategy: str = "similarity"):
     }
     return strategies[strategy]()
 
-
+@traceable(name="ask_langchain", metadata={"app": "AskLangChain"})
 def ask(question: str, strategy: str = "similarity"):
     retriever = get_retriever(strategy)
     llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
@@ -60,11 +62,14 @@ def ask(question: str, strategy: str = "similarity"):
     answer = chain.invoke({
         "context": format_docs(docs),
         "question": question,
-    })
+    }, config={"metadata": {"strategy": strategy, "num_chunks": len(docs)}}) 
 
-    return {"answer": answer, "docs": docs}
+    run_tree = get_current_run_tree()
+    run_id = str(run_tree.id) if run_tree else None 
+
+    return {"answer": answer, "docs": docs, "run_id": run_id }
 
 if __name__ == "__main__":
     result = ask("How do I set up FAISS with LangChain?", strategy="similarity")
     print(result["answer"])
-    print(f"\nRetrieved {len(result['docs'])} chunks")
+    print(f"\nRetrieved {len(result['docs'])} chunks") 

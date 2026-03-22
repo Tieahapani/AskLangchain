@@ -1,15 +1,15 @@
-import os 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.vectorstores import FAISS 
+from langchain_community.vectorstores import FAISS
 from langchain_community.retrievers import BM25Retriever
-from langchain_classic.retrievers import EnsembleRetriever 
+from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
 from langchain_classic.retrievers import ContextualCompressionRetriever
-from dotenv import load_dotenv 
-
-load_dotenv()
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 def load_vectorstore(path: str = "VectorStore"): 
     embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")

@@ -1,12 +1,15 @@
 import streamlit as st 
 import os 
 import sys 
+from langsmith import Client as LangSmithClient  
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # Load secrets for Streamlit Cloud deployment
-if hasattr(st, "secrets") and "GOOGLE_API_KEY" in st.secrets:
-    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+if hasattr(st, "secrets"):
+    for key in ["GOOGLE_API_KEY", "LANGCHAIN_TRACING_V2", "LANGCHAIN_API_KEY", "LANGCHAIN_PROJECT"]:
+        if key in st.secrets:
+            os.environ[key] = st.secrets[key]
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -90,9 +93,25 @@ if question := st.chat_input("Ask about LangChain..."):
                     "text": doc.page_content[:300],
                 })
 
+        if result.get("run_id"):
+             col1, col2, _ = st.columns([1, 1, 10])
+             with col1:
+                if st.button("👍", key=f"up_{result['run_id']}"):
+                    ls_client = LangSmithClient()
+                    ls_client.create_feedback(result["run_id"], key="user_score", score=1)
+                    st.toast("Thanks for the feedback!")
+             with col2:
+                if st.button("👎", key=f"down_{result['run_id']}"):
+                    ls_client = LangSmithClient()
+                    ls_client.create_feedback(result["run_id"], key="user_score", score=0)
+                    st.toast("Thanks — we'll improve!")        
+
+                    
+
     # Save to chat history
     st.session_state.messages.append({
         "role": "assistant",
         "content": result["answer"],
         "docs": docs_data,
+        "run_id": result.get("run_id"), 
     })
