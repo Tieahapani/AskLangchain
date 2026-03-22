@@ -87,3 +87,6 @@ Threshold	Only returns chunks above a score cutoff	When precision matters
 MMR	Picks diverse chunks, avoids redundancy	Broad topic questions
 Hybrid	BM25 keywords + vector semantics combined	Exact API names + concepts
 Hybrid + Reranking	Hybrid → cross-encoder rescoring	Highest quality answers
+
+## Here is the streamlit url that I have deployed, check it out! 
+** https://asklangchain-beo4m5dnjb6qrtah4kterp.streamlit.app/** 
