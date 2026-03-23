@@ -1,7 +1,8 @@
-import streamlit as st 
-import os 
-import sys 
-from langsmith import Client as LangSmithClient  
+import streamlit as st
+import os
+import sys
+import uuid
+from langsmith import Client as LangSmithClient
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
@@ -98,12 +99,12 @@ if question := st.chat_input("Ask about LangChain..."):
              with col1:
                 if st.button("👍", key=f"up_{result['run_id']}"):
                     ls_client = LangSmithClient()
-                    ls_client.create_feedback(result["run_id"], key="user_score", score=1)
+                    ls_client.create_feedback(uuid.UUID(result["run_id"]), key="user_score", score=1)
                     st.toast("Thanks for the feedback!")
              with col2:
                 if st.button("👎", key=f"down_{result['run_id']}"):
                     ls_client = LangSmithClient()
-                    ls_client.create_feedback(result["run_id"], key="user_score", score=0)
+                    ls_client.create_feedback(uuid.UUID(result["run_id"]), key="user_score", score=0)
                     st.toast("Thanks — we'll improve!")        
 
                     
