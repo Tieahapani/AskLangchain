@@ -67,23 +67,23 @@ Thumbs up/down buttons on every answer feed directly into LangSmith traces — l
 
 ## Architecture
 
-### One-time Setup
-> Scrape docs → Split into chunks → Create embeddings → Save to search index
+**One-time Setup:**
+Scrape docs → Split into chunks → Create embeddings → Save to search index
 
-### Standard Mode
-> Question → Search → Relevant Chunks → LLM → Answer with Sources
+**Standard Mode:**
+Question → Search → Relevant Chunks → LLM → Answer with Sources
 
-### COT + Self-Reflection Mode
+**COT + Self-Reflection Mode:**
 
-```mermaid
-graph LR
-    A[Question] --> B[Search]
-    B --> C[Filter Chunks]
-    C --> D[Reasoning]
-    D --> E[Self Check]
-    E -->|Good| F[Done]
-    E -->|Not Good| G[Rewrite Question]
-    G -->|max 2 retries| B
+| Step | What happens |
+|------|-------------|
+| 1 | Search for relevant document chunks |
+| 2 | Filter out irrelevant chunks |
+| 3 | Reason step-by-step through the context |
+| 4 | Self-check: Is the answer grounded and complete? |
+| 5a | If yes → return the answer |
+| 5b | If no → rewrite the question and go back to step 1 (max 2 retries) |
+
 
 **Project Structure section — replace with:**
 
