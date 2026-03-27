@@ -79,12 +79,11 @@ Thumbs up/down buttons on every answer feed directly into LangSmith traces — l
 graph LR
     A[Question] --> B[Search]
     B --> C[Filter Chunks]
-    C --> D[Step-by-Step Reasoning]
-    D --> E[Self-Check]
+    C --> D[Reasoning]
+    D --> E[Self Check]
     E -->|Good| F[Done]
     E -->|Not Good| G[Rewrite Question]
     G -->|max 2 retries| B
-
 
 **Project Structure section — replace with:**
 
@@ -110,6 +109,7 @@ AskLangChain/
 ├── requirements.txt
 ├── .env.example
 └── .gitignore
+
 
 
 
