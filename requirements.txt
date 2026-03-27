@@ -10,3 +10,4 @@ lxml
 rank-bm25
 sentence-transformers
 langchain-classic
+langgraph 

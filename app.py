@@ -14,7 +14,7 @@ if hasattr(st, "secrets"):
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from Rag.chain import ask 
+from Rag.chain import ask, ask_cot_reflect 
 
 # Page config
 st.set_page_config(page_title="AskLangChain", page_icon="🔗", layout="wide")
@@ -46,6 +46,20 @@ with st.sidebar:
     }[strategy])
 
     st.divider()
+    mode = st.radio(
+        "RAG Mode",
+        ["standard", "cot_reflect"],
+        format_func=lambda x: {
+            "standard": "Standard RAG",
+            "cot_reflect": "COT + Self-Reflection",
+        }[x],
+    )
+    st.caption({
+        "standard": "Single-pass retrieval and generation.",
+        "cot_reflect": "Chain-of-Thought reasoning with self-reflection and retry loop.",
+    }[mode])
+
+    st.divider()
     if st.button("Clear Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -65,6 +79,18 @@ for msg in st.session_state.messages:
                     st.markdown(f"[{doc['source']}]({doc['source']})")
                     st.code(doc["text"][:300], language=None)
                     st.divider()
+        if msg.get("run_id") and msg["role"] == "assistant":
+            col1, col2, _ = st.columns([1, 1, 10])
+            with col1:
+                if st.button("👍", key=f"hist_up_{msg['run_id']}"):
+                    ls_client = LangSmithClient()
+                    ls_client.create_feedback(uuid.UUID(msg["run_id"]), key="user_score", score=1)
+                    st.toast("Thanks for the feedback!")
+            with col2:
+                if st.button("👎", key=f"hist_down_{msg['run_id']}"):
+                    ls_client = LangSmithClient()
+                    ls_client.create_feedback(uuid.UUID(msg["run_id"]), key="user_score", score=0)
+                    st.toast("Thanks — we'll improve!")
 
 # Chat input
 if question := st.chat_input("Ask about LangChain..."):
@@ -75,15 +101,33 @@ if question := st.chat_input("Ask about LangChain..."):
 
     # Get answer
     with st.chat_message("assistant"):
-        with st.spinner("Searching docs..."):
-            result = ask(question, strategy=strategy)
+        if mode == "cot_reflect":
+            with st.spinner("Thinking step-by-step..."):
+                result = ask_cot_reflect(question, strategy=strategy)
+        else:
+            with st.spinner("Searching docs..."):
+                result = ask(question, strategy=strategy)
 
         st.markdown(result["answer"])
 
+        # COT extras: reasoning, reflection, retry info
+        if mode == "cot_reflect":
+            if result.get("reasoning"):
+                with st.expander("Reasoning Trace (Chain-of-Thought)"):
+                    st.markdown(result["reasoning"])
+
+            if result.get("reflection"):
+                with st.expander("Self-Reflection"):
+                    st.markdown(result["reflection"])
+
+            if result.get("retry_count", 0) > 0:
+                st.info(f"Query was rewritten {result['retry_count']} time(s). Final query: _{result.get('rewritten_question', '')}_")
+
         # Show retrieved chunks
         docs_data = []
-        with st.expander(f"Retrieved {len(result['docs'])} chunks"):
-            for doc in result["docs"]:
+        docs_list = result.get("docs", [])
+        with st.expander(f"Retrieved {len(docs_list)} chunks"):
+            for doc in docs_list:
                 st.markdown(f"**{doc.metadata['title']}**")
                 st.markdown(f"[{doc.metadata['source']}]({doc.metadata['source']})")
                 st.code(doc.page_content[:300], language=None)
@@ -105,14 +149,12 @@ if question := st.chat_input("Ask about LangChain..."):
                 if st.button("👎", key=f"down_{result['run_id']}"):
                     ls_client = LangSmithClient()
                     ls_client.create_feedback(uuid.UUID(result["run_id"]), key="user_score", score=0)
-                    st.toast("Thanks — we'll improve!")        
-
-                    
+                    st.toast("Thanks — we'll improve!")
 
     # Save to chat history
     st.session_state.messages.append({
         "role": "assistant",
         "content": result["answer"],
         "docs": docs_data,
-        "run_id": result.get("run_id"), 
+        "run_id": result.get("run_id"),
     })

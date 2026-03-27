@@ -8,6 +8,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langsmith.run_helpers import get_current_run_tree 
+from Rag.graph import cot_rag_graph
 from langsmith import traceable 
 
 from Rag.retriever import (
@@ -68,6 +69,27 @@ def ask(question: str, strategy: str = "similarity"):
     run_id = str(run_tree.id) if run_tree else None 
 
     return {"answer": answer, "docs": docs, "run_id": run_id }
+
+@traceable(name="ask_cot_reflect", metadata={"app": "AskLangChain"})
+def ask_cot_reflect(question: str, strategy: str = "similarity"):
+    run_tree = get_current_run_tree()
+    run_id = str(run_tree.id) if run_tree else None
+
+    result = cot_rag_graph.invoke({
+        "question": question,
+        "strategy": strategy,
+        "retry_count": 0,
+    })
+
+    return {
+        "answer" : result["generation"],
+        "docs": result.get("filtered_documents", result.get("documents", [])),
+        "reasoning": result.get("reasoning", ""),
+        "reflection": result.get("reflection", ""),
+        "retry_count": result.get("retry_count", 0),
+        "rewritten_question": result.get("rewritten_question", ""),
+        "run_id": run_id,
+    }
 
 if __name__ == "__main__":
     result = ask("How do I set up FAISS with LangChain?", strategy="similarity")
