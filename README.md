@@ -67,50 +67,46 @@ Thumbs up/down buttons on every answer feed directly into LangSmith traces — l
 
 ## Architecture
 
-**One-time setup:** Scrape docs → Split into chunks → Create embeddings → Save to vector store
+### One-time Setup
+> Scrape docs → Split into chunks → Create embeddings → Save to search index
 
-**Standard mode:**
-Question → Search → Relevant Chunks → LLM → Answer with Sources
+### Standard Mode
+> Question → Search → Relevant Chunks → LLM → Answer with Sources
+
+### COT + Self-Reflection Mode
+
+```mermaid
+graph LR
+    A[Question] --> B[Search]
+    B --> C[Filter Chunks]
+    C --> D[Step-by-Step Reasoning]
+    D --> E[Self-Check]
+    E -->|Good| F[Done]
+    E -->|Not Good| G[Rewrite Question]
+    G -->|max 2 retries| B
 
 
+**Project Structure section — replace with:**
 
-**COT + Self-Reflection mode:**
-Question → Search → Filter Chunks → Step-by-Step Reasoning → Self-Check
-↑                                                 │
-│                                          Good? ─┤
-│                                          Yes → Done
-└──── Rewrite Question ◄──── No (max 2) ─────────┘
-
-
-
-## Tech Stack
-
-| What | Technology |
-|------|-----------|
-| AI Framework | LangChain + LangGraph |
-| Search Index | FAISS |
-| Embeddings | Google Gemini |
-| Language Model | Google Gemini 2.0 Flash |
-| Keyword Search | BM25 |
-| Result Reranking | HuggingFace Cross-Encoder |
-| Monitoring | LangSmith |
-| Web Scraping | BeautifulSoup |
-| UI | Streamlit |
-
+```markdown
 ## Project Structure
 
 AskLangChain/
-├── app.py                  # Chat UI with strategy picker, mode toggle, feedback buttons
+│
+├── app.py                      # Chat UI with strategy picker, mode toggle, feedback buttons
+│
 ├── Rag/
-│   ├── retriever.py        # 5 search strategies
-│   ├── chain.py            # Standard + COT answer generation
-│   ├── nodes.py            # Individual steps: retrieve, filter, reason, reflect, rewrite
-│   └── graph.py            # Wires the steps into a workflow with retry logic
+│   ├── retriever.py            # 5 search strategies
+│   ├── chain.py                # Standard + COT answer generation
+│   ├── nodes.py                # Individual steps: retrieve, filter, reason, reflect, rewrite
+│   └── graph.py                # Wires the steps into a workflow with retry logic
+│
 ├── Scripts/
-│   ├── ingest_docs.py      # Scrape and index documentation (run once)
-│   ├── create_dataset.py   # Create test dataset in LangSmith
-│   └── eval.py             # Run evaluation across all strategies
-├── VectorStore/            # Saved search index
+│   ├── ingest_docs.py          # Scrape and index documentation (run once)
+│   ├── create_dataset.py       # Create test dataset in LangSmith
+│   └── eval.py                 # Run evaluation across all strategies
+│
+├── VectorStore/                # Saved search index
 ├── requirements.txt
 ├── .env.example
 └── .gitignore
@@ -151,11 +147,14 @@ streamlit run app.py
 
 python3 Scripts/create_dataset.py
 python3 Scripts/eval.py
-What I Learned
-Different search methods give very different results for the same question — there's no single best approach
-Combining keyword search with meaning-based search catches things that either method misses alone
-Reranking results with a second model improves accuracy but adds a speed tradeoff
-Filtering irrelevant chunks before answering makes a bigger difference than expected — the model reasons much better with clean context
-Step-by-step reasoning over retrieved docs produces more reliable answers than asking the model to answer directly
-End-to-end tracing makes it easy to debug exactly where things went wrong
-Building a test suite forces you to define what a "good answer" actually looks like
+
+## What I Learned
+
+- Different search methods give very different results for the same question — there's no single best approach
+- Combining keyword search with meaning-based search catches things that either method misses alone
+- Reranking results with a second model improves accuracy but adds a speed tradeoff
+- Filtering irrelevant chunks before answering makes a bigger difference than expected — the model reasons much better with clean context
+- Step-by-step reasoning over retrieved docs produces more reliable answers than asking the model to answer directly
+- End-to-end tracing makes it easy to debug exactly where things went wrong
+- Building a test suite forces you to define what a "good answer" actually looks like
+
