@@ -2,7 +2,7 @@
 
 A smart Q&A assistant for LangChain documentation. Instead of digging through 100+ pages of docs, just ask a question in plain English and get an accurate answer with links to the source.
 
-[Try it live](https://asklangchain.streamlit.app)
+[Try it live](https://asklangchain-beo4m5dnjb6qrtah4kterp.streamlit.app/)
 
 ## The Problem
 
